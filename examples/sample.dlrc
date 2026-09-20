@@ -1,0 +1,13 @@
+[ti: Song Title]
+[ar: Song Artist]
+[al: Album Title]
+[length: 3:35]
+- [#000DFF: blue]
+- [#FF0000: red]
+- [#00FF00: lime]
+
+[00:10.15]{1}<blue> Singer 1 sings this line, and it's colored blue.
+[00:15.40]{2}<red> Singer 2 sings this line, and it's colored red.
+[00:20.80]{B}<lime> Both singers sing this line, and it's colored lime.
+[00:23.76]{1}<#FF8000> Singer 3 sings this line in the left column, and it's colored orange.
+[00:28.12]{2} Singer 4 sings this line in the right column, and it is the default assigned color for the right column.
