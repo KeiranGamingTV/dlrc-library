@@ -121,10 +121,16 @@ export function parseDlrc(content: string): ParsedDlrc {
   if (lyricLines.length === 0) warnings.push('No timestamped lyric lines found.');
 
   if (durationMs === null && lyricLines.length) {
-    const lastTimestamp = Math.max(...lyricLines.map(line => line.timestampMs));
-    durationMs = lastTimestamp;
-    durationSource = 'inferred';
-    warnings.push('No valid [length:] metadata found; duration was inferred from the final lyric timestamp.');
+  const lastTimestamp = Math.max(
+    ...lyricLines.map((line) => line.timestampMs)
+  );
+
+  durationMs = lastTimestamp;
+  durationSource = 'inferred';
+
+  warnings.push(
+    'No valid [length:] metadata found; duration was inferred from the final lyric timestamp and may be shorter than the actual song.'
+  );
   }
 
   const declaredDurationMs = durationMs;
