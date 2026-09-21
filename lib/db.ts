@@ -92,9 +92,3 @@ export async function getSong(id: string): Promise<Song | null> {
 
   return data as Song | null;
 }
-
-export async function getAdminSubmission(id: string) {
-  const admin = createAdminClient();
-  const { data } = await admin.from('submissions').select('*').eq('id', id).maybeSingle();
-  return data;
-}
