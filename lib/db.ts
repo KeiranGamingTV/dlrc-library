@@ -82,7 +82,7 @@ export async function getSong(id: string): Promise<Song | null> {
 
   const { data, error } = await supabase
     .from('songs')
-    .select('id,title,artist,album,duration_ms,year,dlrc_version,content')
+    .select('id,title,artist,album,duration_ms,year,dlrc_version,storage_path')
     .eq('id', id)
     .maybeSingle();
 
