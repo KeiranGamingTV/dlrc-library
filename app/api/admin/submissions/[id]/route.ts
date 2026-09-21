@@ -21,7 +21,14 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (getError || !submission) return NextResponse.json({ error: 'Submission not found.' }, { status: 404 });
 
   if (action === 'reject') {
-    const { error } = await admin.from('submissions').update({
+  if (submission.status === 'approved') {
+    return NextResponse.json(
+      { error: 'An approved submission cannot be rejected.' },
+      { status: 409 }
+    );
+  }
+
+  const { error } = await admin.from('submissions').update({
       status: 'rejected', verification_notes: notes, reviewed_at: new Date().toISOString(), reviewed_by: user.id
     }).eq('id', id);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -29,7 +36,14 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   }
 
   if (action !== 'approve') return NextResponse.json({ error: 'Invalid action.' }, { status: 400 });
-  if (submission.status === 'approved') return NextResponse.json({ error: 'Submission is already approved.' }, { status: 409 });
+  if (submission.status !== 'pending') {
+  return NextResponse.json(
+    {
+      error: `Only pending submissions can be approved. Current status: ${submission.status}.`,
+    },
+    { status: 409 }
+  );
+  }
 
   const { data: duplicate } = await admin.from('songs').select('id').eq('file_hash', submission.file_hash).maybeSingle();
   if (duplicate) return NextResponse.json({ error: 'This file hash is already published.' }, { status: 409 });
@@ -71,8 +85,19 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const { error: updateError } = await admin.from('submissions').update({
     status: 'approved', verification_notes: notes, reviewed_at: new Date().toISOString(), reviewed_by: user.id
   }).eq('id', id);
-  if (updateError) return NextResponse.json({ error: updateError.message }, { status: 500 });
+  if (updateError) {
+  await admin.from('songs').delete().eq('id', submission.id);
+  await admin.storage.from('dlrc-files').remove([publicPath]);
 
-  await admin.storage.from('submissions').remove([submission.storage_path]);
-  return NextResponse.json({ ok: true });
+  return NextResponse.json(
+    { error: updateError.message },
+    { status: 500 }
+  );
+}
+
+await admin.storage
+  .from('submissions')
+  .remove([submission.storage_path]);
+
+return NextResponse.json({ ok: true });
 }
