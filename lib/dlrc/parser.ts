@@ -131,12 +131,16 @@ export function parseDlrc(content: string): ParsedDlrc {
   warnings.push(
     'No valid [length:] metadata found; duration was inferred from the final lyric timestamp and may be shorter than the actual song.'
   );
-  }
+}
 
-  const declaredDurationMs = durationMs;
-  if (declaredDurationMs !== null && lyricLines.some(line => line.timestampMs > declaredDurationMs)) {
-    warnings.push('At least one lyric timestamp occurs after the declared duration.');
-  }
+if (
+  declaredDurationMs !== null &&
+  lyricLines.some((line) => line.timestampMs > declaredDurationMs)
+) {
+  warnings.push(
+    'At least one lyric timestamp occurs after the declared duration.'
+  );
+}
 
   return {
     title,
