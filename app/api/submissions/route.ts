@@ -42,7 +42,11 @@ export async function POST(request: Request) {
   const title = clean(form.get('title'), 300) ?? parsed.title;
   const artist = clean(form.get('artist'), 300) ?? parsed.artist;
   const album = clean(form.get('album'), 300) ?? (parsed.album || null);
-  const durationFromForm = optionalInteger(form.get('duration_ms'), 0, 24 * 60 * 60 * 1000);
+  const durationFromForm = optionalInteger(
+  form.get('duration_ms'),
+  1,
+  24 * 60 * 60 * 1000
+);
   const durationMs = durationFromForm ?? parsed.durationMs;
   const year = optionalInteger(form.get('year'), 0, 9999);
   const genre = clean(form.get('genre'), 120);
