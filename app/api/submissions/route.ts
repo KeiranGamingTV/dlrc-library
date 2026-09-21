@@ -50,7 +50,19 @@ export async function POST(request: Request) {
   const lyricist = clean(form.get('lyricist'), 500);
   const notes = clean(form.get('notes'), MAX_TEXT_LENGTH);
 
-  if (!title || !artist) return NextResponse.json({ error: 'Title and artist are required.' }, { status: 400 });
+  if (!title || !artist) {
+  return NextResponse.json(
+    { error: 'Title and artist are required.' },
+    { status: 400 }
+  );
+}
+
+if (title.length > 300 || artist.length > 300) {
+  return NextResponse.json(
+    { error: 'Title and artist must be 300 characters or fewer.' },
+    { status: 400 }
+  );
+}
   if (durationFromForm === null && String(form.get('duration_ms') ?? '').trim()) {
     return NextResponse.json({ error: 'Duration must be a whole number of milliseconds.' }, { status: 400 });
   }
