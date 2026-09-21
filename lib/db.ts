@@ -1,7 +1,16 @@
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 
-export type Song = { id:string; title:string; artist:string; album:string|null; duration_ms:number|null; year:number|null; dlrc_version:string|null; content:string; };
+export type Song = {
+  id: string;
+  title: string;
+  artist: string;
+  album: string | null;
+  duration_ms: number | null;
+  year: number | null;
+  dlrc_version: string | null;
+  content?: string;
+};
 
 export async function searchSongs(query: string): Promise<Song[]> {
   const supabase = await createClient();
