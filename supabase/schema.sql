@@ -46,7 +46,6 @@ create table public.songs (
   dlrc_version text not null default '1.0',
   file_hash text not null unique,
   storage_path text not null unique,
-  content text not null,
   created_at timestamptz not null default now()
 );
 
