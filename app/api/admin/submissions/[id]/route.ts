@@ -75,7 +75,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     dlrc_version: submission.parsed_metadata?.version || '1.0',
     file_hash: submission.file_hash,
     storage_path: publicPath,
-    content
   });
   if (insertError) {
     await admin.storage.from('dlrc-files').remove([publicPath]);
