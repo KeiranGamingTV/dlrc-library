@@ -79,7 +79,17 @@ export async function searchSongs(query: string): Promise<Song[]> {
 
 export async function getSong(id: string): Promise<Song | null> {
   const supabase = await createClient();
-  const { data } = await supabase.from('songs').select('id,title,artist,album,duration_ms,year,dlrc_version,content').eq('id', id).maybeSingle();
+
+  const { data, error } = await supabase
+    .from('songs')
+    .select('id,title,artist,album,duration_ms,year,dlrc_version,content')
+    .eq('id', id)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`Failed to retrieve song: ${error.message}`);
+  }
+
   return data as Song | null;
 }
 
