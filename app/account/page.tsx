@@ -7,7 +7,8 @@ export default async function AccountPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return <main className="section"><div className="container">Please sign in.</div></main>;
-  const { data: submissions } = await supabase.from('submissions').select('id,title,artist,status,created_at,verification_notes').order('created_at',{ascending:false}).limit(50);
+  const { data: submissions, error: submissionsError } = await supabase  .from('submissions')  .select('id,title,artist,status,created_at,verification_notes')  .order('created_at', { ascending: false })  .limit(50);
+  if (submissionsError) { throw new Error(`Failed to load submissions: ${submissionsError.message}`);}
   const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle();
   return <main className="section"><div className="container">
     <div className="row"><div><h1 className="title">Account</h1><p className="subtitle">{user.email}</p></div><form action={logout}><button className="btn" type="submit">Sign out</button></form></div>
