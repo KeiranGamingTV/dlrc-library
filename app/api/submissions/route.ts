@@ -30,6 +30,7 @@ export async function POST(request: Request) {
   const file = form.get('file');
   if (!(file instanceof File)) return NextResponse.json({ error: 'A .dlrc file is required.' }, { status: 400 });
   if (!file.name.toLowerCase().endsWith('.dlrc')) return NextResponse.json({ error: 'Only .dlrc files are accepted.' }, { status: 400 });
+  if (file.type && file.type !== 'text/plain' && file.type !== 'application/octet-stream') {return NextResponse.json({ error: 'The uploaded DLRC file must be a text file.' }, { status: 400 });}
   if (file.size > MAX_FILE_SIZE) return NextResponse.json({ error: 'Maximum file size is 1 MB.' }, { status: 400 });
 
   const content = await file.text();
