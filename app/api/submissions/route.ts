@@ -108,7 +108,7 @@ if (title.length > 300 || artist.length > 300) {
     composer,
     lyricist,
     notes,
-    parsed_metadata: parsed,
+    parsed_metadata: { version: parsed.version, durationSource: parsed.durationSource, speakerIds: parsed.speakerIds, colors: parsed.colors, warnings: parsed.warnings,},
     status: 'pending'
   });
 
