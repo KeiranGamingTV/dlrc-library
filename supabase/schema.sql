@@ -15,7 +15,7 @@ create table public.submissions (
   user_id uuid not null references auth.users(id) on delete cascade,
   filename text not null,
   storage_path text not null unique,
-  file_hash text not null,
+  file_hash text not null unique,
   title text not null,
   artist text not null,
   album text,
