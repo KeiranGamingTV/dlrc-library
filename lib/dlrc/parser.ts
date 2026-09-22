@@ -21,7 +21,7 @@ export type ParsedDlrc = {
 };
 
 const HEX = /^#[0-9a-fA-F]{6}$/;
-const TIMESTAMP = /^(\d+):(\d{2})\.(\d{1,3})$/;
+const TIMESTAMP = /^(\d{1,6}):(\d{2})\.(\d{1,3})$/;
 
 function timestampToMs(value: string) {
   const match = value.match(TIMESTAMP);
