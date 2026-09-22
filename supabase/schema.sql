@@ -1,5 +1,6 @@
 -- DLRC Library database schema for Supabase/Postgres.
 create extension if not exists pgcrypto;
+create extension if not exists pg_trgm;
 
 create type public.user_role as enum ('user', 'admin');
 create type public.submission_status as enum ('pending', 'rejected', 'approved');
@@ -54,6 +55,9 @@ create index songs_artist_idx on public.songs using gin (to_tsvector('simple', a
 create index songs_album_idx on public.songs using gin (to_tsvector('simple', coalesce(album,'')));
 create index submissions_user_idx on public.submissions(user_id, created_at desc);
 create index submissions_status_idx on public.submissions(status, created_at asc);
+create index songs_title_trgm_idxon public.songs using gin (title gin_trgm_ops);
+create index songs_artist_trgm_idxon public.songs using gin (artist gin_trgm_ops);
+create index songs_album_trgm_idxon public.songs using gin (album gin_trgm_ops);
 
 create or replace function public.handle_new_user()
 returns trigger
