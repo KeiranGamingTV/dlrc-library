@@ -28,7 +28,7 @@ The parser currently supports the syntax demonstrated by the supplied sample:
 - `[al:]` album
 - `[length:]` duration
 - Arbitrary additional metadata tags
-- Named color declarations such as `- [#000DFF: blue]`
+- Named color declarations such as `[#000DFF: blue]`
 - Speaker assignments such as `{1}`, `{2}`, and `{B}`
 - Named lyric colors such as `<blue>`
 - Direct hexadecimal lyric colors such as `<#FF8000>`
