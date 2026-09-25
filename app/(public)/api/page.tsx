@@ -22,12 +22,11 @@ export default function ApiPage() {
             <h2>Base URL</h2>
 
             <pre className="api-code">
-              https://your-domain.com/api/v1
+              wait
             </pre>
 
             <p className="small">
-              Replace your-domain.com with the domain where
-              the library is deployed.
+              In progress.
             </p>
           </section>
 
@@ -50,9 +49,14 @@ export default function ApiPage() {
               <code>/search?q={"{query}"}</code>
 
               <p>
-                Searches verified songs by title, artist, or
-                album.
+                Searches verified songs by title, artist, or album.
+                Use <code>limit</code> and <code>offset</code> for
+                pagination.
               </p>
+
+              <pre className="api-code">
+              GET /api/v1/search?q=metal&amp;limit=25&amp;offset=0
+              </pre>
             </div>
 
             <div className="api-endpoint">
@@ -90,30 +94,34 @@ export default function ApiPage() {
             <h2>Example</h2>
 
             <pre className="api-code">
-{`GET /api/v1/search?q=underworld
+              {`GET /api/v1/search?q=underworld
 
-{
-  "data": [
-    {
-      "id": "song-id",
-      "title": "Song Title",
-      "artist": "Artist",
-      "album": "Album",
-      "duration_ms": 222000,
-      "duration": "3:42",
-      "dlrc_version": "1.0",
-      "endpoints": {
-        "song": "/api/v1/songs/song-id",
-        "dlrc": "/api/v1/songs/song-id/dlrc",
-        "download": "/api/v1/download/song-id"
-      }
-    }
-  ],
-  "meta": {
-    "query": "underworld",
-    "count": 1
-  }
-}`}
+              {
+                "data": [
+                  {
+                    "id": "song-id",
+                    "title": "Song Title",
+                    "artist": "Artist",
+                    "album": "Album",
+                    "duration_ms": 222000,
+                    "duration": "3:42",
+                    "dlrc_version": "1.0",
+                    "endpoints": {
+                      "song": "/api/v1/songs/song-id",
+                      "dlrc": "/api/v1/songs/song-id/dlrc",
+                      "download": "/api/v1/download/song-id"
+                    }
+                  }
+                ],
+                "meta": {
+                  "query": "underworld",
+                  "count": 1,
+                  "total": 1,
+                  "limit": 25,
+                  "offset": 0,
+                  "has_more": false
+                }
+              }`}
             </pre>
           </section>
 

@@ -1,5 +1,9 @@
 import { getSong } from '@/lib/db';
 import { apiError, apiOptions } from '@/lib/api';
+import {
+  createETag,
+  isNotModified,
+} from '@/lib/http-cache';
 
 export const runtime = 'nodejs';
 
@@ -8,7 +12,7 @@ export async function OPTIONS() {
 }
 
 export async function GET(
-  _request: Request,
+  request: Request,
   {
     params,
   }: {
@@ -23,6 +27,20 @@ export async function GET(
     return apiError('Song not found.', 404);
   }
 
+  const etag = createETag(song.content);
+
+  if (isNotModified(request, etag)) {
+    return new Response(null, {
+      status: 304,
+      headers: {
+        ETag: etag,
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type',
+      },
+    });
+  }
+
   return new Response(song.content, {
     status: 200,
     headers: {
@@ -30,6 +48,8 @@ export async function GET(
       'Content-Disposition': `inline; filename="${safeFilename(
         song.title
       )}.dlrc"`,
+
+      ETag: etag,
 
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, OPTIONS',

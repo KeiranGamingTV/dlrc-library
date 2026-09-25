@@ -2,23 +2,26 @@ import { NextResponse } from 'next/server';
 
 export const API_VERSION = '1';
 
-export function apiHeaders() {
+export function apiHeaders(
+  cacheSeconds = 30
+) {
   return {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type',
-    'Cache-Control': 'public, max-age=30, s-maxage=60',
+    'Cache-Control': `public, max-age=${cacheSeconds}, s-maxage=${cacheSeconds}`,
   };
 }
 
 export function apiJson(
   data: unknown,
-  init?: ResponseInit
+  init?: ResponseInit,
+  cacheSeconds = 30
 ) {
   return NextResponse.json(data, {
     ...init,
     headers: {
-      ...apiHeaders(),
+      ...apiHeaders(cacheSeconds),
       ...(init?.headers || {}),
     },
   });

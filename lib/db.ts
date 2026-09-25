@@ -14,68 +14,68 @@ export type Song = {
   content: string;
 };
 
-export async function searchSongs(query: string): Promise<Song[]> {
+export async function searchSongs(
+  query: string,
+  limit = 25,
+  offset = 0
+) {
   const supabase = await createClient();
-  const q = query.trim();
 
-  const columns =
-    'id,title,artist,album,duration_ms,year,genre,composer,lyricist,dlrc_version,content';
+  const search = query.trim();
 
-  if (!q) {
-    const { data } = await supabase
-      .from('songs')
-      .select(columns)
-      .order('title')
-      .limit(50);
+  let request = supabase
+    .from('songs')
+    .select(
+      `
+        id,
+        title,
+        artist,
+        album,
+        duration_ms,
+        year,
+        genre,
+        composer,
+        lyricist,
+        dlrc_version
+      `,
+      { count: 'exact' }
+    )
+    .order('artist', { ascending: true })
+    .order('title', { ascending: true })
+    .order('id', { ascending: true })
+    .range(
+      offset,
+      offset + limit - 1
+    );
 
-    return (data ?? []) as Song[];
+  if (search) {
+    const escaped = search
+      .replace(/[%_]/g, '\\$&')
+      .replace(/,/g, ' ');
+
+    request = request.or(
+      `title.ilike.%${escaped}%,artist.ilike.%${escaped}%,album.ilike.%${escaped}%`
+    );
   }
 
-  const pattern = `%${q}%`;
+  const { data, error, count } = await request;
 
-  const [titleResult, artistResult, albumResult] =
-    await Promise.all([
-      supabase
-        .from('songs')
-        .select(columns)
-        .ilike('title', pattern)
-        .limit(50),
+  if (error) {
+    console.error(
+      'searchSongs:',
+      error
+    );
 
-      supabase
-        .from('songs')
-        .select(columns)
-        .ilike('artist', pattern)
-        .limit(50),
-
-      supabase
-        .from('songs')
-        .select(columns)
-        .ilike('album', pattern)
-        .limit(50),
-    ]);
-
-  const byId = new Map<string, Song>();
-
-  for (const row of [
-    ...(titleResult.data ?? []),
-    ...(artistResult.data ?? []),
-    ...(albumResult.data ?? []),
-  ]) {
-    byId.set(row.id, row as Song);
+    throw new Error(
+      'Unable to search the DLRC library.'
+    );
   }
 
-  return [...byId.values()]
-    .sort((a, b) => {
-      const titleCompare = a.title.localeCompare(b.title);
-      
-      if (titleCompare !== 0) {
-        return titleCompare;
-      }
-      
-      return a.artist.localeCompare(b.artist);
-    })
-    .slice(0, 50);
-  }
+  return {
+    songs: data ?? [],
+    total: count ?? 0,
+  };
+}
   
 export async function getSong(id: string): Promise<Song | null> {
   const supabase = await createClient();
