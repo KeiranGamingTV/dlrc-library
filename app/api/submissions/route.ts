@@ -78,13 +78,43 @@ if (title.length > 300 || artist.length > 300) {
   const hash = crypto.createHash('sha256').update(content).digest('hex');
   const admin = createAdminClient();
 
-  const [{ data: submissionDuplicate }, { data: publishedDuplicate }] = await Promise.all([
-    admin.from('submissions').select('id,status').eq('file_hash', hash).limit(1).maybeSingle(),
-    admin.from('songs').select('id').eq('file_hash', hash).limit(1).maybeSingle(),
-  ]);
-  if (publishedDuplicate) return NextResponse.json({ error: 'This exact DLRC file is already published in the library.' }, { status: 409 });
-  if (submissionDuplicate) return NextResponse.json({ error: `This exact DLRC file has already been submitted (status: ${submissionDuplicate.status}).` }, { status: 409 });
+    const [{ data: submissionDuplicates }, { data: publishedDuplicate }] =
+    await Promise.all([
+      admin
+        .from('submissions')
+        .select('id,status')
+        .eq('file_hash', hash)
+        .in('status', ['pending', 'approved'])
+        .limit(1),
 
+      admin
+        .from('songs')
+        .select('id')
+        .eq('file_hash', hash)
+        .limit(1)
+        .maybeSingle(),
+    ]);
+
+  if (publishedDuplicate) {
+    return NextResponse.json(
+      {
+        error:
+          'This exact DLRC file is already published in the library.',
+      },
+      { status: 409 }
+    );
+  }
+
+  if (submissionDuplicates?.length) {
+    return NextResponse.json(
+      {
+        error:
+          'This exact DLRC file is already awaiting verification.',
+      },
+      { status: 409 }
+    );
+  }
+  
   const id = crypto.randomUUID();
   const path = `${user.id}/${id}.dlrc`;
   const { error: uploadError } = await admin.storage.from('submissions').upload(
