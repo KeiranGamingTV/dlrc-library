@@ -135,7 +135,7 @@ export function parseDlrc(content: string): ParsedDlrc {
 
 if (
   durationMs !== null &&
-  lyricLines.some((line) => line.timestampMs > durationMs)
+  lyricLines.some((line) => line.timestampMs > durationMs!)
 ) {
   warnings.push(
     'At least one lyric timestamp occurs after the declared duration.'
