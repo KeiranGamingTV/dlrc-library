@@ -151,3 +151,199 @@ pre { overflow:auto; }
   .song-page-header .btn {    width: 100%;    text-align: center;  }
   .section-heading {    align-items: flex-start;    flex-direction: column;  }
   .public-dlrc-line {    grid-template-columns: 58px 42px minmax(0, 1fr);    gap: 10px;    padding: 11px 12px;  }}
+.account-header {
+  align-items: flex-start;
+}
+
+.account-actions {
+  margin: 20px 0 24px;
+}
+
+.account-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 38px;
+}
+
+.account-stat {
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--panel);
+}
+
+.account-stat span {
+  display: block;
+  color: var(--muted);
+  font-size: .78rem;
+  text-transform: uppercase;
+  letter-spacing: .055em;
+}
+
+.account-stat strong {
+  display: block;
+  margin-top: 5px;
+  font-size: 1.45rem;
+}
+
+.account-section-heading {
+  margin-bottom: 14px;
+}
+
+.account-section-heading h2 {
+  margin: 0;
+}
+
+.account-section-heading p {
+  margin: 5px 0 0;
+  color: var(--muted);
+  font-size: .88rem;
+}
+
+.submission-list {
+  display: grid;
+  gap: 12px;
+}
+
+.submission-card {
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--panel);
+}
+
+.submission-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.submission-card-title {
+  min-width: 0;
+}
+
+.submission-card-title h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  overflow-wrap: anywhere;
+}
+
+.submission-card-title p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: .88rem;
+}
+
+.submission-status {
+  flex: 0 0 auto;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 5px 9px;
+  font-size: .75rem;
+  font-weight: 750;
+}
+
+.status-pending {
+  color: #fde68a;
+  border-color: #5c4b1a;
+  background: rgba(92, 75, 26, .18);
+}
+
+.status-approved {
+  color: #86efac;
+  border-color: #275b3b;
+  background: rgba(39, 91, 59, .18);
+}
+
+.status-rejected {
+  color: #fca5a5;
+  border-color: #653333;
+  background: rgba(101, 51, 51, .18);
+}
+
+.submission-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px 14px;
+  margin-top: 14px;
+  color: var(--muted);
+  font-size: .78rem;
+}
+
+.submission-feedback {
+  margin-top: 16px;
+  padding: 13px 15px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, .025);
+}
+
+.submission-feedback-title {
+  font-size: .78rem;
+  font-weight: 750;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+.submission-feedback p {
+  margin: 5px 0 0;
+  color: var(--muted);
+  font-size: .88rem;
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+
+.submission-feedback-success {
+  border-color: #275b3b;
+}
+
+.submission-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.resubmission-notice {
+  margin: 22px 0;
+  padding: 16px 18px;
+  border: 1px solid #653333;
+  border-radius: 12px;
+  background: rgba(101, 51, 51, .14);
+}
+
+.resubmission-notice-title {
+  color: #fca5a5;
+  font-size: .78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .055em;
+}
+
+.resubmission-notice p {
+  margin: 7px 0 0;
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+
+@media (max-width: 650px) {
+  .account-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .submission-card-header {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .submission-status {
+    align-self: flex-start;
+  }
+
+  .submission-card-actions .btn {
+    width: 100%;
+    text-align: center;
+  }
+}
