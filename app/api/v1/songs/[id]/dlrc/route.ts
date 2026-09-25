@@ -4,6 +4,9 @@ import {
   createETag,
   isNotModified,
 } from '@/lib/http-cache';
+import {
+  checkRateLimit,
+} from '@/lib/rate-limit';
 
 export const runtime = 'nodejs';
 
@@ -12,6 +15,19 @@ export async function OPTIONS() {
 }
 
 export async function GET(
+  const rateLimit =
+    await checkRateLimit(
+      request,
+      'content'
+    );
+
+  if (!rateLimit.allowed) {
+    return apiRateLimitResponse(
+      rateLimit.limit,
+      rateLimit.retryAfter
+    );
+  }
+
   request: Request,
   {
     params,
@@ -57,6 +73,12 @@ export async function GET(
 
       'Cache-Control':
         'public, max-age=300, s-maxage=3600',
+
+      'X-RateLimit-Limit':
+        String(rateLimit.limit),
+
+      'X-RateLimit-Remaining':
+        String(rateLimit.remaining),
     },
   });
 }

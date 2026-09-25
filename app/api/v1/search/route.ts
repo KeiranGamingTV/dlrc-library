@@ -2,9 +2,13 @@ import {
   apiError,
   apiJson,
   apiOptions,
+  apiRateLimitResponse,
 } from '@/lib/api';
 import { searchSongs } from '@/lib/db';
 import { formatDuration } from '@/lib/dlrc/parser';
+import {
+  checkRateLimit,
+} from '@/lib/rate-limit';
 
 export const runtime = 'nodejs';
 
@@ -18,6 +22,19 @@ export async function OPTIONS() {
 }
 
 export async function GET(request: Request) {
+  const rateLimit =
+    await checkRateLimit(
+      request,
+      'search'
+    );
+
+  if (!rateLimit.allowed) {
+    return apiRateLimitResponse(
+      rateLimit.limit,
+      rateLimit.retryAfter
+    );
+  }
+  
   const url = new URL(request.url);
 
   const query = (url.searchParams.get('q') || '').trim();

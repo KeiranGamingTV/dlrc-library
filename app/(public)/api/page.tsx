@@ -135,6 +135,37 @@ export default function ApiPage() {
             </p>
           </section>
 
+          <section className="card">
+            <h2>Rate limits</h2>
+
+            <p className="small">
+              The public API uses per-client-IP rate limits to
+              protect the service from excessive automated traffic.
+            </p>
+
+            <div className="api-rate-table">
+              <div>
+                <strong>Search</strong>
+                <span>60 requests/minute</span>
+              </div>
+
+              <div>
+                <strong>Song metadata</strong>
+                <span>120 requests/minute</span>
+              </div>
+
+              <div>
+                <strong>DLRC retrieval/download</strong>
+                <span>120 requests/minute</span>
+              </div>
+            </div>
+
+            <p className="small">
+              When a limit is exceeded, the API returns HTTP 429
+              and includes a <code>Retry-After</code> header.
+            </p>
+          </section>
+
           <Link className="btn" href="/search">
             Browse the library
           </Link>

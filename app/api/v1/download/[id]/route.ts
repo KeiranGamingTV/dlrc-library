@@ -1,5 +1,8 @@
 import { getSong } from '@/lib/db';
-import { apiError, apiOptions } from '@/lib/api';
+import { apiError, apiOptions, apiRateLimitResponse, } from '@/lib/api';
+import {
+  checkRateLimit,
+} from '@/lib/rate-limit';
 
 export const runtime = 'nodejs';
 
@@ -8,6 +11,19 @@ export async function OPTIONS() {
 }
 
 export async function GET(
+  const rateLimit =
+    await checkRateLimit(
+      request,
+      'content'
+    );
+
+  if (!rateLimit.allowed) {
+    return apiRateLimitResponse(
+      rateLimit.limit,
+      rateLimit.retryAfter
+    );
+  }
+  
   _request: Request,
   {
     params,

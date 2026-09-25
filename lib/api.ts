@@ -48,3 +48,31 @@ export function apiOptions() {
     headers: apiHeaders(),
   });
 }
+
+export function apiRateLimitResponse(
+  limit: number,
+  retryAfter: number
+) {
+  return apiJson(
+    {
+      error: {
+        message:
+          'Too many requests. Please try again later.',
+        status: 429,
+      },
+    },
+    {
+      status: 429,
+      headers: {
+        'Retry-After': String(
+          retryAfter
+        ),
+
+        'X-RateLimit-Limit':
+          String(limit),
+
+        'X-RateLimit-Remaining': '0',
+      },
+    }
+  );
+}

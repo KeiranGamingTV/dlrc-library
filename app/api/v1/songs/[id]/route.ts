@@ -2,6 +2,7 @@ import {
   apiError,
   apiJson,
   apiOptions,
+  apiRateLimitResponse,
 } from '@/lib/api';
 import { getSong } from '@/lib/db';
 import { formatDuration } from '@/lib/dlrc/parser';
@@ -9,6 +10,9 @@ import {
   createETag,
   isNotModified,
 } from '@/lib/http-cache';
+import {
+  checkRateLimit,
+} from '@/lib/rate-limit';
 
 export const runtime = 'nodejs';
 
@@ -17,6 +21,19 @@ export async function OPTIONS() {
 }
 
 export async function GET(
+  const rateLimit =
+    await checkRateLimit(
+      request,
+      'metadata'
+    );
+
+  if (!rateLimit.allowed) {
+    return apiRateLimitResponse(
+      rateLimit.limit,
+      rateLimit.retryAfter
+    );
+  }
+
   request: Request,
   {
     params,
@@ -55,6 +72,12 @@ export async function GET(
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'GET, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type',
+
+        X-RateLimit-Limit':
+          String(rateLimit.limit),
+
+        'X-RateLimit-Remaining':
+          String(rateLimit.remaining),
       },
     });
   }
