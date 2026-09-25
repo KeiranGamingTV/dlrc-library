@@ -1,23 +1,52 @@
-import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
-import { createAdminClient } from '@/lib/supabase/admin';
-export const runtime='nodejs';
-export async function GET(_:Request,{params}:{params:Promise<{id:string}>}){const {id}=await params;const admin = createAdminClient();
+import { getSong } from '@/lib/db';
+import { apiError, apiOptions } from '@/lib/api';
 
-const { data: s, error: songError } = await admin
-  .from('songs')
-  .select('id,title,storage_path')
-  .eq('id', id)
-  .maybeSingle();
+export const runtime = 'nodejs';
 
-if (songError) {
-  return NextResponse.json(
-    { error: 'Unable to locate the requested file.' },
-    { status: 500 }
+export async function OPTIONS() {
+  return apiOptions();
+}
+
+export async function GET(
+  _request: Request,
+  {
+    params,
+  }: {
+    params: Promise<{ id: string }>;
+  }
+) {
+  const { id } = await params;
+
+  const song = await getSong(id);
+
+  if (!song) {
+    return apiError('Song not found.', 404);
+  }
+
+  const filename = `${safeFilename(song.title)}.dlrc`;
+
+  return new Response(song.content, {
+    status: 200,
+    headers: {
+      'Content-Type': 'application/octet-stream',
+      'Content-Disposition': `attachment; filename="${filename}"`,
+
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+
+      'Cache-Control':
+        'public, max-age=300, s-maxage=3600',
+    },
+  });
+}
+
+function safeFilename(value: string) {
+  return (
+    value
+      .replace(/[^a-zA-Z0-9._ -]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, 150) || 'song'
   );
-};if(!s)return NextResponse.json({error:'Not found'},{status:404});const {data:url,error}=await admin.storage.from('dlrc-files').createSignedUrl(s.storage_path,60);if(error||!url)return NextResponse.json({error:'File unavailable'},{status:500});const r=await fetch(url.signedUrl,{cache:'no-store'});if(!r.ok)return NextResponse.json({error:'File unavailable'},{status:500});const content=await r.text();const safeTitle = s.title
-  .replace(/[^a-z0-9\-_]+/gi, '_')
-  .replace(/^_+|_+$/g, '')
-  .slice(0, 180) || 'song';
-
-const filename = `${safeTitle}.dlrc`;return new NextResponse(content,{headers:{'Content-Type':'text/plain; charset=utf-8','Content-Disposition':`attachment; filename="${filename}"`,'Cache-Control':'private, no-store'}});}
+}
