@@ -91,17 +91,12 @@ export function parseDlrc(content: string): ParsedDlrc {
         warnings.push(`Invalid timestamp on line ${lineNumber}: ${lyric[1]}`);
         return;
       }
-
       const speaker = lyric[2].trim();
       if (!speaker) warnings.push(`Empty speaker assignment on line ${lineNumber}.`);
       else speakers.add(speaker);
-
       const rawColor = lyric[3]?.trim();
-      const color = rawColor
-        ? (HEX.test(rawColor) ? rawColor.toUpperCase() : colors[rawColor])
-        : undefined;
+      const color = rawColor ? (HEX.test(rawColor) ? rawColor.toUpperCase() : colors[rawColor]) : undefined;
       if (rawColor && !color) warnings.push(`Unknown color name on line ${lineNumber}: ${rawColor}`);
-
       lyricLines.push({
         timestampMs,
         speaker,
@@ -121,26 +116,15 @@ export function parseDlrc(content: string): ParsedDlrc {
   if (lyricLines.length === 0) warnings.push('No timestamped lyric lines found.');
 
   if (durationMs === null && lyricLines.length) {
-  const lastTimestamp = Math.max(
-    ...lyricLines.map((line) => line.timestampMs)
-  );
+    const lastTimestamp = Math.max(...lyricLines.map((line) => line.timestampMs));
+    durationMs = lastTimestamp;
+    durationSource = 'inferred';
+    warnings.push('No valid [length:] metadata found; duration was inferred from the final lyric timestamp and may be shorter than the actual song.');
+  }
 
-  durationMs = lastTimestamp;
-  durationSource = 'inferred';
-
-  warnings.push(
-    'No valid [length:] metadata found; duration was inferred from the final lyric timestamp and may be shorter than the actual song.'
-  );
-}
-
-if (
-  durationMs !== null &&
-  lyricLines.some((line) => line.timestampMs > durationMs!)
-) {
-  warnings.push(
-    'At least one lyric timestamp occurs after the declared duration.'
-  );
-}
+  if (durationMs !== null && lyricLines.some((line) => line.timestampMs > durationMs!)) {
+    warnings.push('At least one lyric timestamp occurs after the declared duration.');
+  }
 
   return {
     title,
@@ -177,20 +161,7 @@ export function validateDlrc(parsed: ParsedDlrc) {
   return errors;
 }
 
-export function formatDuration(ms: number | null) {
-  if (ms === null || !Number.isFinite(ms) || ms < 0) return '—';
-  const totalSeconds = Math.round(ms / 1000);
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = totalSeconds % 60;
-  return hours > 0
-    ? `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
-    : `${minutes}:${String(seconds).padStart(2, '0')}`;
-}
-
-export function normalizeSongPart(
-  value: string | null | undefined
-) {
+export function normalizeSongPart(value: string | null | undefined) {
   return (value ?? '')
     .normalize('NFKC')
     .trim()
@@ -203,16 +174,21 @@ export function normalizeSongPart(
     .trim();
 }
 
-export function createSongKey(
-  title: string,
-  artist: string,
-  durationMs: number | null
-) {
+export function createSongKey(title: string, artist: string, durationMs: number | null) {
   return [
     normalizeSongPart(title),
     normalizeSongPart(artist),
-    durationMs === null
-      ? ''
-      : String(Math.round(durationMs / 1000)),
+    durationMs === null ? '' : String(Math.round(durationMs / 1000)),
   ].join('|');
+}
+
+export function formatDuration(ms: number | null) {
+  if (ms === null || !Number.isFinite(ms) || ms < 0) return '—';
+  const totalSeconds = Math.round(ms / 1000);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  return hours > 0
+    ? `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+    : `${minutes}:${String(seconds).padStart(2, '0')}`;
 }
