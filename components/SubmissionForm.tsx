@@ -32,6 +32,7 @@ export function SubmissionForm({
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
+  const [validationErrors, setValidationErrors,] = useState<string[]>([]);
 
   async function choose(nextFile: File | null) {
     setError('');
