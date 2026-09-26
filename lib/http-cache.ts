@@ -1,8 +1,6 @@
 import crypto from 'node:crypto';
 
-export function createETag(
-  value: string
-) {
+export function createETag(value: string) {
   const hash = crypto
     .createHash('sha256')
     .update(value)
@@ -15,7 +13,17 @@ export function isNotModified(
   request: Request,
   etag: string
 ) {
-  return (
-    request.headers.get('if-none-match') === etag
-  );
+  const header =
+    request.headers.get('if-none-match');
+
+  if (!header) return false;
+
+  return header
+    .split(',')
+    .map((value) => value.trim())
+    .some(
+      (value) =>
+        value === etag ||
+        value === '*'
+    );
 }
