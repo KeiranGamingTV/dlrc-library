@@ -69,10 +69,12 @@ export function SubmissionForm({
     }
   }
 
-  async function submit(
+    async function submit(
     e: React.FormEvent<HTMLFormElement>
   ) {
     e.preventDefault();
+
+    const formElement = e.currentTarget;
 
     setError('');
     setMessage('');
@@ -84,7 +86,7 @@ export function SubmissionForm({
 
     setBusy(true);
 
-    const form = new FormData(e.currentTarget);
+    const form = new FormData(formElement);
 
     form.set('file', file);
 
@@ -136,7 +138,9 @@ export function SubmissionForm({
 
       setFile(null);
       setParsed(null);
-      e.currentTarget.reset();
+
+      const formElement = e.currentTarget;
+      formElement.reset();
     } catch (err) {
       setError(
         err instanceof Error
