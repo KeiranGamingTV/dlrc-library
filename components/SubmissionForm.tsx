@@ -32,11 +32,12 @@ export function SubmissionForm({
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
-  const [validationErrors, setValidationErrors,] = useState<string[]>([]);
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
   async function choose(nextFile: File | null) {
     setError('');
     setMessage('');
+    setValidationErrors([]);
     setParsed(null);
     setFile(nextFile);
 
@@ -56,6 +57,7 @@ export function SubmissionForm({
       const text = await nextFile.text();
       const result = parseDlrc(text);
       const errors = validateDlrc(result);
+      setValidationErrors(errors);
 
       if (errors.length) {
         setError(errors.join(' '));
@@ -97,44 +99,39 @@ export function SubmissionForm({
       });
 
       const text = await res.text();
+      let data: {
+        error?: string;
+        details?: string[];
+        status?: string;
+        automatic?: boolean;
+        badge?: string | null;
+      } = {};
 
-let data: {
-  error?: string;
-  details?: string[];
-  warnings?: string[];
-} = {};
+      if (text) {
+        try {
+          data = JSON.parse(text);
+        } catch {
+          throw new Error(
+            `The server returned an invalid response (HTTP ${res.status}).`
+          );
+        }
+      }
 
-if (text) {
-  try {
-    data = JSON.parse(text);
-  } catch {
-    throw new Error(
-      `The server returned an invalid response (HTTP ${res.status}).`
-    );
-  }
-}
-
-if (!res.ok) {
-  const details = data.details?.length
-    ? ` ${data.details.join(' ')}`
-    : '';
-
-  throw new Error(
-    (data.error || 'Submission failed.') +
-      details
-  );
-}
-      
       if (!res.ok) {
+        const details = data.details?.length
+          ? ` ${data.details.join(' ')}`
+          : '';
         throw new Error(
-          data.error || 'Submission failed.'
+          (data.error || 'Submission failed.') + details
         );
       }
 
       setMessage(
-        resubmissionId
-          ? 'Your corrected file has been resubmitted for verification.'
-          : 'Submitted for verification. You can track it from your account page.'
+        data.automatic && data.status === 'approved'
+          ? `Published automatically${data.badge ? ` as ${data.badge}` : ''}.`
+          : resubmissionId
+            ? 'Your corrected file has been resubmitted for verification.'
+            : 'Submitted for verification. You can track it from your account page.'
       );
 
       setFile(null);
