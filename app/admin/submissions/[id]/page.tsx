@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import {  formatDuration,  parseDlrc,  validateDlrc,} from '@/lib/dlrc/parser';
 import { AdminActions } from '@/components/AdminActions';
+import { isOwner } from '@/lib/trust';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,6 +28,8 @@ export default async function AdminSubmissionPage({
 
   if (profile?.role !== 'admin') redirect('/account');
 
+  const reviewerIsOwner = isOwner(user.id);
+
   const admin = createAdminClient();
 
   const { data: submission } = await admin
@@ -36,6 +39,15 @@ export default async function AdminSubmissionPage({
   .maybeSingle();
 
   if (!submission) notFound();
+
+  const { data: submitterProfile } = await admin
+    .from('profiles')
+    .select('role')
+    .eq('id', submission.user_id)
+    .maybeSingle();
+
+  const submitterIsAdmin = submitterProfile?.role === 'admin';
+  const canReview = submission.status === 'pending' && (!submitterIsAdmin || reviewerIsOwner);
 
   const { data: signed } = await admin.storage
   .from('submissions')
@@ -83,6 +95,13 @@ export default async function AdminSubmissionPage({
             {submission.status}
           </span>
         </div>
+
+        {submitterIsAdmin ? (
+          <div className="warning" style={{ marginBottom: 20 }}>
+            This submission was uploaded by an administrator.{' '}
+            {reviewerIsOwner ? 'You are authorized as the site owner to review it.' : 'Only the site owner can review it.'}
+          </div>
+        ) : null}
 
         <div className="grid grid-2">
           <section className="card">
@@ -312,6 +331,7 @@ export default async function AdminSubmissionPage({
         <AdminActions
           id={submission.id}
           status={submission.status}
+          canReview={canReview}
         />
       </div>
     </main>
