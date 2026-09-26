@@ -83,9 +83,11 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     genre: submission.genre,
     composer: submission.composer,
     lyricist: submission.lyricist,
-    dlrc_version: submission.parsed_metadata?.version || '1.0',
-    file_hash: submission.file_hash,
+    dlrc_version: parsed.version || '1.0',
+    file_hash: actualHash,
+    song_key: finalSongKey,
     storage_path: publicPath,
+    content,
   });
   if (insertError) {
     await admin.storage.from('dlrc-files').remove([publicPath]);
