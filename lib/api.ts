@@ -2,15 +2,14 @@ import { NextResponse } from 'next/server';
 
 export const API_VERSION = '1';
 
-export function apiHeaders(cacheSeconds = 30) {
+export function apiHeaders(
+  cacheSeconds = 30
+) {
   return {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, OPTIONS',
-    'Access-Control-Allow-Headers':
-      'Content-Type, If-None-Match',
-    'Cache-Control':
-      `public, max-age=${cacheSeconds}, s-maxage=${cacheSeconds}`,
-    'X-API-Version': API_VERSION,
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Cache-Control': `public, max-age=${cacheSeconds}, s-maxage=${cacheSeconds}`,
   };
 }
 
@@ -39,20 +38,14 @@ export function apiError(
         status,
       },
     },
-    {
-      status,
-      headers: {
-        'Cache-Control': 'no-store',
-      },
-    },
-    0
+    { status }
   );
 }
 
 export function apiOptions() {
   return new NextResponse(null, {
     status: 204,
-    headers: apiHeaders(0),
+    headers: apiHeaders(),
   });
 }
 
@@ -71,12 +64,15 @@ export function apiRateLimitResponse(
     {
       status: 429,
       headers: {
-        'Retry-After': String(retryAfter),
-        'X-RateLimit-Limit': String(limit),
+        'Retry-After': String(
+          retryAfter
+        ),
+
+        'X-RateLimit-Limit':
+          String(limit),
+
         'X-RateLimit-Remaining': '0',
-        'Cache-Control': 'no-store',
       },
-    },
-    0
+    }
   );
 }
