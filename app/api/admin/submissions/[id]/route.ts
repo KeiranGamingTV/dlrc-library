@@ -54,6 +54,17 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (!response.ok) return NextResponse.json({ error: 'Could not read submitted file.' }, { status: 500 });
   const content = await response.text();
 
+
+  const parsed = parseDlrc(content);
+  const validationErrors =
+  validateDlrc(parsed);
+  
+  const actualHash =
+  crypto
+    .createHash('sha256')
+    .update(content)
+    .digest('hex');
+
   const publicPath = `${submission.id}.dlrc`;
   const { error: copyError } = await admin.storage.from('dlrc-files').upload(
     publicPath,
