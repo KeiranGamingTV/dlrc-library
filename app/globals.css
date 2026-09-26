@@ -1095,3 +1095,17 @@ pre {
     gap: 4px;
   }
 }
+.warning {
+  border:1px solid #8a6d1d;
+  background:rgba(234,179,8,.08);
+  color:var(--text);
+  border-radius:10px;
+  padding:12px 14px;
+}
+
+.trust-card { margin-bottom:24px; }
+.trust-card h2 { margin:4px 0 0; }
+.trust-card-header { margin-bottom:18px; }
+.trust-progress-label { display:flex; justify-content:space-between; gap:16px; margin-bottom:8px; }
+.trust-progress { height:10px; background:var(--panel-2); border:1px solid var(--border); border-radius:999px; overflow:hidden; margin-bottom:12px; }
+.trust-progress-fill { height:100%; background:var(--accent-strong); transition:width .2s ease; }
