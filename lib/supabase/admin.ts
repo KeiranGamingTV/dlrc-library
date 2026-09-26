@@ -5,9 +5,7 @@ export function createAdminClient() {
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!url || !serviceRoleKey) {
-    throw new Error(
-      'Supabase admin environment variables are not configured.'
-    );
+    throw new Error('Supabase admin environment variables are not configured.');
   }
 
   return createClient(url, serviceRoleKey, {
