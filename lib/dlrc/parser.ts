@@ -187,3 +187,32 @@ export function formatDuration(ms: number | null) {
     ? `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
     : `${minutes}:${String(seconds).padStart(2, '0')}`;
 }
+
+export function normalizeSongPart(
+  value: string | null | undefined
+) {
+  return (value ?? '')
+    .normalize('NFKC')
+    .trim()
+    .toLocaleLowerCase()
+    .replace(/[\u2018\u2019]/g, "'")
+    .replace(/[\u201C\u201D]/g, '"')
+    .replace(/&/g, ' and ')
+    .replace(/[^\p{L}\p{N}]+/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+export function createSongKey(
+  title: string,
+  artist: string,
+  durationMs: number | null
+) {
+  return [
+    normalizeSongPart(title),
+    normalizeSongPart(artist),
+    durationMs === null
+      ? ''
+      : String(Math.round(durationMs / 1000)),
+  ].join('|');
+}
