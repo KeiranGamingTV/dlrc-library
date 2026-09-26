@@ -1,115 +1,88 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { isOwner } from '@/lib/trust';
+import { publishSubmission } from '@/lib/submissions/publish';
 
 export const runtime = 'nodejs';
 
-export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
   const { id } = await params;
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
+
   if (!user) return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });
 
-  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle();
-  if (profile?.role !== 'admin') return NextResponse.json({ error: 'Admin access required.' }, { status: 403 });
+  const { data: reviewerProfile, error: reviewerProfileError } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .maybeSingle();
 
-  const body = await request.json();
+  if (reviewerProfileError) return NextResponse.json({ error: 'Unable to determine administrator permissions.' }, { status: 500 });
+  if (reviewerProfile?.role !== 'admin') return NextResponse.json({ error: 'Admin access required.' }, { status: 403 });
+
+  let body: { action?: string; notes?: string };
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid request body.' }, { status: 400 });
+  }
+
   const action = body.action;
-  const notes = String(body.notes || '').slice(0, 4000);
+  const notes = String(body.notes ?? '').trim().slice(0, 4000);
+
+  if (action !== 'approve' && action !== 'reject') {
+    return NextResponse.json({ error: 'Invalid review action.' }, { status: 400 });
+  }
+
+  if (action === 'reject' && !notes) {
+    return NextResponse.json({ error: 'A rejection reason is required.' }, { status: 400 });
+  }
+
   const admin = createAdminClient();
-  const { data: submission, error: getError } = await admin.from('submissions').select('*').eq('id', id).maybeSingle();
-  if (getError || !submission) return NextResponse.json({ error: 'Submission not found.' }, { status: 404 });
+  const { data: submission, error: submissionError } = await admin
+    .from('submissions')
+    .select('id,user_id,status,title,artist,storage_path')
+    .eq('id', id)
+    .maybeSingle();
+
+  if (submissionError) return NextResponse.json({ error: 'Unable to load submission.' }, { status: 500 });
+  if (!submission) return NextResponse.json({ error: 'Submission not found.' }, { status: 404 });
+  if (submission.status !== 'pending') return NextResponse.json({ error: `This submission has already been reviewed. Current status: ${submission.status}.` }, { status: 409 });
+
+  const { data: submitterProfile, error: submitterProfileError } = await admin
+    .from('profiles')
+    .select('role')
+    .eq('id', submission.user_id)
+    .maybeSingle();
+
+  if (submitterProfileError) return NextResponse.json({ error: 'Unable to determine the submitter account type.' }, { status: 500 });
+
+  const submitterIsAdmin = submitterProfile?.role === 'admin';
+  if (submitterIsAdmin && !isOwner(user.id)) {
+    return NextResponse.json({ error: 'Administrator submissions can only be reviewed by the site owner.' }, { status: 403 });
+  }
 
   if (action === 'reject') {
-  if (submission.status === 'approved') {
-    return NextResponse.json(
-      { error: 'An approved submission cannot be rejected.' },
-      { status: 409 }
-    );
+    const { error } = await admin
+      .from('submissions')
+      .update({ status: 'rejected', verification_notes: notes, reviewed_at: new Date().toISOString(), reviewed_by: user.id })
+      .eq('id', id)
+      .eq('status', 'pending');
+
+    if (error) return NextResponse.json({ error: 'Unable to reject the submission.' }, { status: 500 });
+    return NextResponse.json({ ok: true, action: 'rejected' });
   }
 
-  const { error } = await admin.from('submissions').update({
-      status: 'rejected', verification_notes: notes, reviewed_at: new Date().toISOString(), reviewed_by: user.id
-    }).eq('id', id);
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    return NextResponse.json({ ok: true });
+  try {
+    const result = await publishSubmission(id, user.id, notes);
+    return NextResponse.json({ ok: true, action: 'approved', songId: result.songId });
+  } catch (error) {
+    console.error('Publish submission:', error);
+    return NextResponse.json({ error: error instanceof Error ? error.message : 'Unable to publish the submission.' }, { status: 500 });
   }
-
-  if (action !== 'approve') return NextResponse.json({ error: 'Invalid action.' }, { status: 400 });
-  if (submission.status !== 'pending') {
-  return NextResponse.json(
-    {
-      error: `Only pending submissions can be approved. Current status: ${submission.status}.`,
-    },
-    { status: 409 }
-  );
-  }
-
-  const { data: duplicate } = await admin.from('songs').select('id').eq('file_hash', submission.file_hash).maybeSingle();
-  if (duplicate) return NextResponse.json({ error: 'This file hash is already published.' }, { status: 409 });
-
-  const { data: contentUrl, error: urlError } = await admin.storage.from('submissions').createSignedUrl(submission.storage_path, 60);
-  if (urlError || !contentUrl) return NextResponse.json({ error: 'Could not read submitted file.' }, { status: 500 });
-  const response = await fetch(contentUrl.signedUrl, { cache: 'no-store' });
-  if (!response.ok) return NextResponse.json({ error: 'Could not read submitted file.' }, { status: 500 });
-  const content = await response.text();
-
-
-  const parsed = parseDlrc(content);
-  const validationErrors =
-  validateDlrc(parsed);
-  
-  const actualHash =
-  crypto
-    .createHash('sha256')
-    .update(content)
-    .digest('hex');
-
-  const publicPath = `${submission.id}.dlrc`;
-  const { error: copyError } = await admin.storage.from('dlrc-files').upload(
-    publicPath,
-    new Blob([content], { type: 'text/plain; charset=utf-8' }),
-    { upsert: false, contentType: 'text/plain; charset=utf-8' }
-  );
-  if (copyError) return NextResponse.json({ error: copyError.message }, { status: 500 });
-
-  const { error: insertError } = await admin.from('songs').insert({
-    id: submission.id,
-    title: submission.title,
-    artist: submission.artist,
-    album: submission.album,
-    duration_ms: submission.duration_ms,
-    year: submission.year,
-    genre: submission.genre,
-    composer: submission.composer,
-    lyricist: submission.lyricist,
-    dlrc_version: parsed.version || '1.0',
-    file_hash: actualHash,
-    song_key: finalSongKey,
-    storage_path: publicPath,
-    content,
-  });
-  if (insertError) {
-    await admin.storage.from('dlrc-files').remove([publicPath]);
-    return NextResponse.json({ error: insertError.message }, { status: 500 });
-  }
-
-  const { error: updateError } = await admin.from('submissions').update({
-    status: 'approved', verification_notes: notes, reviewed_at: new Date().toISOString(), reviewed_by: user.id
-  }).eq('id', id);
-  if (updateError) {
-  await admin.from('songs').delete().eq('id', submission.id);
-  await admin.storage.from('dlrc-files').remove([publicPath]);
-
-  return NextResponse.json(
-    { error: updateError.message },
-    { status: 500 }
-  );
-}
-
-await admin.storage
-  .from('submissions')
-  .remove([submission.storage_path]);
-
-return NextResponse.json({ ok: true });
 }
