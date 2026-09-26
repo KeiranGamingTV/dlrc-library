@@ -46,13 +46,27 @@ export function AdminActions({
         }
       );
 
-      const data = await response.json();
+      const text = await response.text();
 
-      if (!response.ok) {
-        throw new Error(
-          data.error || 'Request failed.'
-        );
-      }
+let data: {
+  error?: string;
+} = {};
+
+if (text) {
+  try {
+    data = JSON.parse(text);
+  } catch {
+    throw new Error(
+      `The server returned an invalid response (HTTP ${response.status}).`
+    );
+  }
+}
+
+if (!response.ok) {
+  throw new Error(
+    data.error || 'Request failed.'
+  );
+}
 
       router.push('/admin');
       router.refresh();
