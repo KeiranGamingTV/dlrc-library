@@ -15,6 +15,13 @@ export async function OPTIONS() {
 }
 
 export async function GET(
+  request: Request,
+  {
+    params,
+  }: {
+    params: Promise<{ id: string }>;
+  }
+) {
   const rateLimit =
     await checkRateLimit(
       request,
