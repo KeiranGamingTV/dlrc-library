@@ -27,17 +27,17 @@ export default async function SearchPage(
           </div>
 
           {q ? (
-            <div className="search-count">
-              {results.length} result
-              {results.length === 1 ? '' : 's'}
-            </div>
-          ) : null}
+      <div className="search-count">
+        {results.total} result
+        {results.total === 1 ? '' : 's'}
+      </div>
+    ) : null}
         </div>
         
         <SearchForm initialQuery={q} />
 
         <div style={{ marginTop: 28 }}>
-          {results.length === 0 ? (
+          {results.songs.length === 0 ? (
             <div className="card empty">
               <div className="empty-title">
                 {q
@@ -59,7 +59,7 @@ export default async function SearchPage(
             </div>
           ) : (
             <div className="search-results">
-              {results.map((song) => (
+              {results.songs.map((song) => (
                 <Link
                   className="song-result"
                   key={song.id}
