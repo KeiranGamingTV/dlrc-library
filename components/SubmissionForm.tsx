@@ -95,8 +95,35 @@ export function SubmissionForm({
         body: form,
       });
 
-      const data = await res.json();
+      const text = await res.text();
 
+let data: {
+  error?: string;
+  details?: string[];
+  warnings?: string[];
+} = {};
+
+if (text) {
+  try {
+    data = JSON.parse(text);
+  } catch {
+    throw new Error(
+      `The server returned an invalid response (HTTP ${res.status}).`
+    );
+  }
+}
+
+if (!res.ok) {
+  const details = data.details?.length
+    ? ` ${data.details.join(' ')}`
+    : '';
+
+  throw new Error(
+    (data.error || 'Submission failed.') +
+      details
+  );
+}
+      
       if (!res.ok) {
         throw new Error(
           data.error || 'Submission failed.'
