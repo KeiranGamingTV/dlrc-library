@@ -9,9 +9,33 @@ export default function HomePage() {
           <h1>DLRC Library</h1>
           <p>A searchable, verified home for Duet LRC files. Find synchronized duet lyrics or submit your own for review.</p>
           <SearchForm />
-          <div className="actions" style={{justifyContent:'center', marginTop:18}}>
-            <Link className="btn" href="/search">Browse the library</Link>
-            <Link className="btn" href="/auth/signup">Create an account to submit</Link>
+          <div
+            className="actions"
+            style={{
+              justifyContent: 'center',
+              marginTop: 18,
+            }}
+          >
+            <Link
+              className="btn btn-primary"
+              href="/search"
+            >
+              Search the library
+            </Link>
+
+            <Link
+              className="btn"
+              href="/browse"
+            >
+              Browse the library
+            </Link>
+
+            <Link
+              className="btn"
+              href="/auth/signup"
+            >
+              Create an account to submit
+            </Link>
           </div>
         </div>
       </section>

@@ -2,160 +2,151 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import { getSong } from '@/lib/db';
-import { DownloadButton } from '@/components/DownloadButton';
-import {
-  formatDuration,
-  parseDlrc,
-} from '@/lib/dlrc/parser';
+import { formatDuration } from '@/lib/dlrc/parser';
 
 export const dynamic = 'force-dynamic';
 
-export default async function SongPage({params,}: {
-  params: Promise<{ id: string }>;}) {
-    const { id } = await params;
-    const song = await getSong(id);
-    if (!song) {
-      notFound();
-    }
-    const parsed = parseDlrc(song.content);
-    return (
-      <main className="section">
-        <div className="container">
-          <Link className="small" href="/search">
+export default async function SongPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const song = await getSong(id);
+
+  if (!song) {
+    notFound();
+  }
+
+  return (
+    <main className="section">
+      <div className="container">
+        <div style={{ marginBottom: 24 }}>
+          <Link href="/search" className="btn">
             ← Back to search
           </Link>
-          
-          <div className="song-page-header">
-            <div className="song-page-heading">
-              <div className="verified-label">
-                <span className="verified-dot" />
+        </div>
+
+        <div className="card">
+          <div className="search-header">
+            <div>
+              <div className="badge">
                 Verified DLRC
               </div>
-              <h1 className="song-page-title">
+
+              <h1 className="title">
                 {song.title}
               </h1>
-              <div className="song-page-artist">
+
+              <p className="subtitle">
                 {song.artist}
-              </div>
-              {song.album ? (
-                <div className="song-page-album">
-                  {song.album}
-                </div>
-              ) : null}
+              </p>
             </div>
-            
-            <DownloadButton id={song.id} />
           </div>
-          
-          <div className="song-stats">
-            <div className="song-stat">
-              <span>Duration</span>
-              <strong>
-                {formatDuration(song.duration_ms)}
-              </strong>
+
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns:
+                'repeat(auto-fit, minmax(180px, 1fr))',
+              gap: 16,
+              marginTop: 24,
+            }}
+          >
+            <div>
+              <strong>Album</strong>
+              <div>{song.album || 'Unknown'}</div>
             </div>
-            {song.year ? (
-              <div className="song-stat">
-                <span>Year</span>
-                <strong>{song.year}</strong>
+
+            <div>
+              <strong>Duration</strong>
+              <div>
+                {song.duration_ms !== null
+                  ? formatDuration(song.duration_ms)
+                  : 'Unknown'}
+              </div>
+            </div>
+
+            <div>
+              <strong>Year</strong>
+              <div>{song.year || 'Unknown'}</div>
+            </div>
+
+            <div>
+              <strong>DLRC Version</strong>
+              <div>{song.dlrc_version || '1.0'}</div>
+            </div>
+
+            {song.genre ? (
+              <div>
+                <strong>Genre</strong>
+                <div>{song.genre}</div>
               </div>
             ) : null}
 
-          <div className="song-stat">
-            <span>DLRC version</span>
-            <strong>
-              {song.dlrc_version || '1.0'}
-            </strong>
+            {song.composer ? (
+              <div>
+                <strong>Composer</strong>
+                <div>{song.composer}</div>
+              </div>
+            ) : null}
+
+            {song.lyricist ? (
+              <div>
+                <strong>Lyricist</strong>
+                <div>{song.lyricist}</div>
+              </div>
+            ) : null}
           </div>
-
-          {song.genre ? (
-            <div className="song-stat">
-              <span>Genre</span>
-              <strong>{song.genre}</strong>
-            </div>
-          ) : null}
         </div>
 
-        <div className="grid grid-2 song-extra-info">
-          {song.composer ? (
-            <div className="card">
-              <div className="small">Composer</div>
-              <div>{song.composer}</div>
-            </div>
-          ) : null}
-
-          {song.lyricist ? (
-            <div className="card">
-              <div className="small">Lyricist</div>
-              <div>{song.lyricist}</div>
-            </div>
-          ) : null}
-        </div>
-
-        <section className="lyrics-section">
-          <div className="section-heading">
+        <div
+          className="card"
+          style={{ marginTop: 24 }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              gap: 16,
+              flexWrap: 'wrap',
+            }}
+          >
             <div>
-              <h2>Lyrics</h2>
-              <p>
-                {parsed.lines.length} timestamped line {parsed.lines.length === 1 ? '' : 's'}
+              <h2 style={{ margin: 0 }}>
+                DLRC Lyrics
+              </h2>
+
+              <p className="subtitle">
+                Verified Duet LRC source
               </p>
             </div>
 
-            <DownloadButton id={song.id} />
+            <a
+              className="btn"
+              href={`/api/v1/download/${song.id}`}
+            >
+              Download .dlrc
+            </a>
           </div>
 
-          <div className="public-dlrc">
-            {parsed.lines.map((line, index) => (
-              <div
-                className="public-dlrc-line"
-                key={`${line.timestampMs}-${index}`}>
-                  <span className="public-dlrc-time">
-                    {formatDuration(line.timestampMs)}
-                  </span>
-
-                <span
-                  className="public-dlrc-speaker"
-                  style={
-                    line.color
-                    ? {
-                      borderColor: line.color,
-                      color: line.color,
-                    }
-                    : undefined
-                  } >
-                    {line.speaker}
-                  </span>
-
-                <span
-                  className="public-dlrc-text"
-                  style={
-                    line.color 
-                    ? {
-                    color: line.color,
-                    }
-                    : undefined
-                  } >
-                    {line.text}
-                </span>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <details className="raw-dlrc">
-          <summary>View raw DLRC</summary>
-
-          <pre className="lyrics">
+          <pre
+            style={{
+              marginTop: 20,
+              padding: 20,
+              overflowX: 'auto',
+              whiteSpace: 'pre-wrap',
+              wordBreak: 'break-word',
+              borderRadius: 12,
+              background: 'var(--surface-2)',
+              fontFamily:
+                'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+              lineHeight: 1.6,
+            }}
+          >
             {song.content}
           </pre>
-        </details>
-
-        <div className="song-footer-actions">
-          <DownloadButton id={song.id} />
-
-          <Link className="btn" href="/search">
-            ← Back to search
-          </Link>
         </div>
       </div>
     </main>

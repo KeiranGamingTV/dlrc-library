@@ -19,10 +19,41 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
           <div className="container nav-inner">
             <Link className="brand" href="/">DLRC Library</Link>
             <nav className="nav-links">
-              <Link href="/api">API</Link>
-              <Link href="/search">Search</Link>
-              {user ? <Link href="/submit">Submit</Link> : null}
-              {user ? <Link href="/account">Account</Link> : <Link href="/auth/login">Sign in</Link>}
+              <Link href="/browse">
+                Browse
+              </Link>
+
+              <Link href="/search">
+                Search
+              </Link>
+
+              <Link href="/artists">
+                Artists
+              </Link>
+
+              <Link href="/albums">
+                Albums
+              </Link>
+
+              <Link href="/api">
+                API
+              </Link>
+
+              {user ? (
+                <Link href="/submit">
+                  Submit
+                </Link>
+              ) : null}
+
+              {user ? (
+                <Link href="/account">
+                  Account
+                </Link>
+              ) : (
+                <Link href="/auth/login">
+                  Sign in
+                </Link>
+              )}
             </nav>
           </div>
         </header>
