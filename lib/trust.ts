@@ -22,15 +22,63 @@ export async function getTrustInfo(userId: string): Promise<TrustInfo> {
   const role = profile?.role === 'admin' ? 'admin' : 'user';
   const threshold = role === 'admin' ? 10 : 50;
 
-  const { count, error: countError } = await admin
-    .from('submissions')
-    .select('id', { count: 'exact', head: true })
-    .eq('user_id', userId)
-    .eq('status', 'approved');
+    const { data: submissions, error: countError } =
+    await admin
+      .from('submissions')
+      .select('id,status,resubmission_of')
+      .eq('user_id', userId);
 
-  if (countError) throw new Error('Unable to determine approved file count.');
+  if (countError) {
+    throw new Error(
+      'Unable to determine approved file count.'
+    );
+  }
 
-  const approvedFileCount = count ?? 0;
+  const rows = submissions ?? [];
+
+  // Follow each submission back to its original contribution.
+  // Multiple revisions of the same contribution count only once.
+  const byId = new Map(
+    rows.map((submission) => [
+      submission.id,
+      submission,
+    ])
+  );
+
+  function getContributionRoot(id: string): string {
+    const visited = new Set<string>();
+    let currentId = id;
+
+    while (!visited.has(currentId)) {
+      visited.add(currentId);
+
+      const current = byId.get(currentId);
+
+      if (
+        !current?.resubmission_of ||
+        !byId.has(current.resubmission_of)
+      ) {
+        return currentId;
+      }
+
+      currentId = current.resubmission_of;
+    }
+
+    // Malformed cyclic lineage should not grant extra trust credit.
+    return currentId;
+  }
+
+  const approvedRoots = new Set<string>();
+
+  for (const submission of rows) {
+    if (submission.status === 'approved') {
+      approvedRoots.add(
+        getContributionRoot(submission.id)
+      );
+    }
+  }
+
+  const approvedFileCount = approvedRoots.size;
   const trusted = approvedFileCount >= threshold;
 
   return {
