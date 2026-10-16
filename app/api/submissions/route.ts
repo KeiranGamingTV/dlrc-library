@@ -77,9 +77,75 @@ export async function POST(request: Request) {
     if (submissionDuplicates?.length) return NextResponse.json({ error: 'This exact DLRC file is already awaiting verification.' }, { status: 409 });
 
     if (resubmissionOf) {
-      const { data: original } = await admin.from('submissions').select('id,user_id,status').eq('id', resubmissionOf).maybeSingle();
-      if (!original || original.user_id !== user.id || original.status !== 'rejected') {
-        return NextResponse.json({ error: 'The resubmission reference is invalid.' }, { status: 400 });
+      // Only accept a valid UUID as the original submission ID.
+      if (
+        !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+          resubmissionOf
+        )
+      ) {
+        return NextResponse.json(
+          { error: 'The resubmission reference is invalid.' },
+          { status: 400 }
+        );
+      }
+
+      const {
+        data: original,
+        error: originalError,
+      } = await admin
+        .from('submissions')
+        .select('id,user_id,status')
+        .eq('id', resubmissionOf)
+        .maybeSingle();
+
+      if (originalError) {
+        return NextResponse.json(
+          { error: 'Unable to verify the original submission.' },
+          { status: 500 }
+        );
+      }
+
+      if (
+        !original ||
+        original.user_id !== user.id ||
+        original.status !== 'rejected'
+      ) {
+        return NextResponse.json(
+          {
+            error:
+              'Only your own rejected submissions can be resubmitted.',
+          },
+          { status: 400 }
+        );
+      }
+
+      // Require a linear revision history: each rejected revision
+      // may have at most one direct successor.
+      const {
+        data: existingRevision,
+        error: revisionError,
+      } = await admin
+        .from('submissions')
+        .select('id,status')
+        .eq('resubmission_of', resubmissionOf)
+        .limit(1)
+        .maybeSingle();
+
+      if (revisionError) {
+        return NextResponse.json(
+          { error: 'Unable to verify the revision history.' },
+          { status: 500 }
+        );
+      }
+
+      if (existingRevision) {
+        return NextResponse.json(
+          {
+            error:
+              'This submission already has a revision. Open the latest rejected revision from your account page to continue.',
+          },
+          { status: 409 }
+        );
       }
     }
 
