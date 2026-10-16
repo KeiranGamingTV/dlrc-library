@@ -15,7 +15,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   if (!song) return apiError('Song not found.', 404);
 
   const etag = createETag(song.content);
-  if (isNotModified(request, etag)) return new Response(null, { status: 304, headers: { ETag: etag, 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type', 'X-RateLimit-Limit': String(rateLimit.limit), 'X-RateLimit-Remaining': String(rateLimit.remaining) } });
+  if (isNotModified(request, etag)) return new Response(null, { status: 304, headers: { ETag: etag, 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, If-None-Match', 'Access-Control-Expose-Headers': 'ETag, Cache-Control, Retry-After, X-RateLimit-Limit, X-RateLimit-Remaining', 'X-RateLimit-Limit': String(rateLimit.limit), 'X-RateLimit-Remaining': String(rateLimit.remaining) } });
 
   return new Response(song.content, { status: 200, headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Content-Disposition': `inline; filename="${safeFilename(song.title)}.dlrc"`, ETag: etag, 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type', 'Cache-Control': 'public, max-age=300, s-maxage=3600', 'X-RateLimit-Limit': String(rateLimit.limit), 'X-RateLimit-Remaining': String(rateLimit.remaining) } });
 }
