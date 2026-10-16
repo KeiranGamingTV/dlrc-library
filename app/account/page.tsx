@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getTrustInfo } from '@/lib/trust';
 import { logout } from '@/lib/auth-actions';
+import ContributorProfileForm from '@/components/ContributorProfileForm';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,11 +15,30 @@ export default async function AccountPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return <main className="section"><div className="container">Please sign in.</div></main>;
 
-  const admin = createAdminClient();
-  const [{ data: submissions }, trust] = await Promise.all([
-    admin.from('submissions').select('id,title,artist,album,status,created_at,reviewed_at,verification_notes,filename').eq('user_id', user.id).order('created_at', { ascending: false }).limit(100),
-    getTrustInfo(user.id),
-  ]);
+    const admin = createAdminClient();
+
+    const [
+      { data: submissions },
+      trust,
+      { data: contributorProfile },
+    ] = await Promise.all([
+      admin
+        .from('submissions')
+        .select(
+          'id,title,artist,album,status,created_at,reviewed_at,verification_notes,filename'
+        )
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(100),
+  
+      getTrustInfo(user.id),
+  
+      admin
+        .from('profiles')
+        .select('display_name,public_profile_enabled')
+        .eq('id', user.id)
+        .maybeSingle(),
+    ]);
 
   const rows = submissions ?? [];
   const pendingCount = rows.filter((s) => s.status === 'pending').length;
@@ -39,6 +59,16 @@ export default async function AccountPage() {
           <Link className="btn btn-primary" href="/submit">Submit a DLRC</Link>
           {trust.role === 'admin' ? <Link className="btn" href="/admin">Admin dashboard</Link> : null}
         </div>
+
+        <ContributorProfileForm
+          userId={user.id}
+          initialDisplayName={
+            contributorProfile?.display_name ?? ''
+          }
+          initialPublicEnabled={
+            contributorProfile?.public_profile_enabled ?? false
+          }
+        />
 
         <section className="card trust-card">
           <div className="row trust-card-header">
