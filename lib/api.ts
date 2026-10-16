@@ -8,7 +8,9 @@ export function apiHeaders(
   return {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Headers': 'Content-Type, If-None-Match',
+    'Access-Control-Expose-Headers':
+      'ETag, Cache-Control, Retry-After, X-RateLimit-Limit, X-RateLimit-Remaining',
     'Cache-Control': `public, max-age=${cacheSeconds}, s-maxage=${cacheSeconds}`,
   };
 }
