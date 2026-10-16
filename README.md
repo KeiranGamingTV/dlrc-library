@@ -1,6 +1,6 @@
 # DLRC Library
 
-A Vercel-ready searchable repository for verified Duet LRC (`.dlrc`) files.
+A library to search for and download verified Duet LRC (`.dlrc`) files.
 
 ## Stack
 
