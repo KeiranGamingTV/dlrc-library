@@ -39,6 +39,98 @@ export default async function AdminSubmissionPage({
   .maybeSingle();
 
   if (!submission) notFound();
+  type RevisionHistoryItem = {
+    id: string;
+    title: string | null;
+    artist: string | null;
+    status: string;
+    created_at: string;
+    reviewed_at: string | null;
+    resubmission_of: string | null;
+  };
+
+  const revisionMap = new Map<string, RevisionHistoryItem>();
+
+  revisionMap.set(submission.id, {
+    id: submission.id,
+    title: submission.title,
+    artist: submission.artist,
+    status: submission.status,
+    created_at: submission.created_at,
+    reviewed_at: submission.reviewed_at,
+    resubmission_of: submission.resubmission_of,
+  });
+
+  // Walk backward through the original submission chain.
+  let parentId: string | null = submission.resubmission_of;
+
+  for (let depth = 0; parentId && depth < 25; depth++) {
+    const { data: parent, error: parentError } = await admin
+      .from('submissions')
+      .select(
+        'id,title,artist,status,created_at,reviewed_at,resubmission_of'
+      )
+      .eq('id', parentId)
+      .maybeSingle();
+
+    if (parentError) {
+      throw new Error('Unable to load submission revision history.');
+    }
+
+    if (!parent) break;
+
+    if (revisionMap.has(parent.id)) break;
+
+    revisionMap.set(parent.id, parent);
+    parentId = parent.resubmission_of;
+  }
+
+  // Walk forward through revisions that reference each version.
+  let frontier = [submission.id];
+
+  for (let depth = 0; frontier.length > 0 && depth < 25; depth++) {
+    const { data: children, error: childrenError } = await admin
+      .from('submissions')
+      .select(
+        'id,title,artist,status,created_at,reviewed_at,resubmission_of'
+      )
+      .in('resubmission_of', frontier)
+      .limit(100);
+
+    if (childrenError) {
+      throw new Error('Unable to load submission revision history.');
+    }
+
+    const nextFrontier: string[] = [];
+
+    for (const child of children ?? []) {
+      if (!revisionMap.has(child.id)) {
+        revisionMap.set(child.id, child);
+        nextFrontier.push(child.id);
+      }
+    }
+
+    frontier = nextFrontier;
+  }
+
+  const revisionHistory = [...revisionMap.values()].sort(
+    (a, b) =>
+      new Date(a.created_at).getTime() -
+      new Date(b.created_at).getTime()
+  );
+
+  const { data: reviewEvents, error: reviewEventsError } =
+    await admin
+      .from('submission_review_events')
+      .select(
+        'id,previous_status,new_status,reviewer_id,notes,created_at'
+      )
+      .eq('submission_id', submission.id)
+      .order('created_at', { ascending: true });
+
+  if (reviewEventsError) {
+    throw new Error('Unable to load submission audit history.');
+  }
 
   const { data: submitterProfile } = await admin
     .from('profiles')
@@ -318,16 +410,144 @@ export default async function AdminSubmissionPage({
           </pre>
         </section>
         
-        <section style={{ marginTop: 20 }}>
+                <section style={{ marginTop: 20 }}>
           <div className="card">
             <h2>Uploader notes</h2>
-
             <div className="lyrics">
               {submission.notes || 'No notes provided.'}
             </div>
           </div>
         </section>
-        
+
+        <section style={{ marginTop: 20 }}>
+          <div className="card">
+            <h2>Submission version history</h2>
+
+            <p className="small">
+              Earlier submissions and corrected revisions remain
+              available for moderation review.
+            </p>
+
+            {revisionHistory.length === 1 ? (
+              <p className="small">
+                This submission has no linked revisions.
+              </p>
+            ) : (
+              <div className="list">
+                {revisionHistory.map((revision, index) => (
+                  <div className="list-item" key={revision.id}>
+                    <div className="row">
+                      <div>
+                        <strong>
+                          {index === 0
+                            ? 'Original submission'
+                            : `Revision ${index}`}
+                        </strong>
+
+                        <div className="meta">
+                          {revision.title || 'Untitled'} —{' '}
+                          {revision.artist || 'Unknown artist'}
+                        </div>
+
+                        <div className="small">
+                          Submitted{' '}
+                          {new Date(
+                            revision.created_at
+                          ).toLocaleString()}
+                        </div>
+
+                        {revision.reviewed_at ? (
+                          <div className="small">
+                            Reviewed{' '}
+                            {new Date(
+                              revision.reviewed_at
+                            ).toLocaleString()}
+                          </div>
+                        ) : null}
+                      </div>
+
+                      <span
+                        className={`badge badge-${revision.status}`}
+                      >
+                        {revision.status}
+                      </span>
+                    </div>
+
+                    {revision.id === submission.id ? (
+                      <div className="small" style={{ marginTop: 10 }}>
+                        Currently viewing this revision
+                      </div>
+                    ) : (
+                      <div style={{ marginTop: 10 }}>
+                        <a
+                          className="btn"
+                          href={`/admin/submissions/${revision.id}`}
+                        >
+                          Open revision
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+
+        <section style={{ marginTop: 20 }}>
+          <div className="card">
+            <h2>Review audit history</h2>
+
+            <p className="small">
+              Recorded submission creation and status changes.
+            </p>
+
+            {reviewEvents.length === 0 ? (
+              <p className="small">
+                No audit events are available for this submission.
+              </p>
+            ) : (
+              <div className="list">
+                {reviewEvents.map((event) => (
+                  <div className="list-item" key={event.id}>
+                    <div className="row">
+                      <div>
+                        <strong>
+                          {event.previous_status} → {event.new_status}
+                        </strong>
+
+                        <div className="small">
+                          {new Date(
+                            event.created_at
+                          ).toLocaleString()}
+                        </div>
+                      </div>
+
+                      <span
+                        className={`badge badge-${event.new_status}`}
+                      >
+                        {event.new_status}
+                      </span>
+                    </div>
+
+                    {event.reviewer_id ? (
+                      <p className="small">
+                        Recorded user ID: {event.reviewer_id}
+                      </p>
+                    ) : null}
+
+                    {event.notes ? (
+                      <div className="admin-rejection-preview">
+                        {event.notes}
+                      </div>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+
         <AdminActions
           id={submission.id}
           status={submission.status}
