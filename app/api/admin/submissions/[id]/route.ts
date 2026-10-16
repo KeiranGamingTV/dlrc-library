@@ -68,13 +68,36 @@ export async function POST(
   }
 
   if (action === 'reject') {
-    const { error } = await admin
+    const { data: updatedSubmission, error } = await admin
       .from('submissions')
-      .update({ status: 'rejected', verification_notes: notes, reviewed_at: new Date().toISOString(), reviewed_by: user.id })
+      .update({
+        status: 'rejected',
+        verification_notes: notes,
+        reviewed_at: new Date().toISOString(),
+        reviewed_by: user.id,
+      })
       .eq('id', id)
-      .eq('status', 'pending');
+      .eq('status', 'pending')
+      .select('id')
+      .maybeSingle();
 
-    if (error) return NextResponse.json({ error: 'Unable to reject the submission.' }, { status: 500 });
+    if (error) {
+      return NextResponse.json(
+        { error: 'Unable to reject the submission.' },
+        { status: 500 }
+      );
+    }
+
+    if (!updatedSubmission) {
+      return NextResponse.json(
+        {
+          error:
+            'This submission was already reviewed by another request.',
+        },
+        { status: 409 }
+      );
+    }
+
     return NextResponse.json({ ok: true, action: 'rejected' });
   }
 
