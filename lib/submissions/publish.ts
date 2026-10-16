@@ -107,23 +107,30 @@ export async function publishSubmission(
     throw new Error(insertError.message);
   }
 
-  const { error: updateError } = await admin
-    .from('submissions')
-    .update({
-      status: 'approved',
-      verification_notes: verificationNotes || null,
-      reviewed_at: new Date().toISOString(),
-      reviewed_by: reviewerId,
-      validation_errors: [],
-      validation_warnings: parsed.warnings,
-    })
-    .eq('id', submissionId)
-    .eq('status', 'pending');
+  const { data: updatedSubmission, error: updateError } =
+    await admin
+      .from('submissions')
+      .update({
+        status: 'approved',
+        verification_notes: verificationNotes || null,
+        reviewed_at: new Date().toISOString(),
+        reviewed_by: reviewerId,
+        validation_errors: [],
+        validation_warnings: parsed.warnings,
+      })
+      .eq('id', submissionId)
+      .eq('status', 'pending')
+      .select('id')
+      .maybeSingle();
 
-  if (updateError) {
+  if (updateError || !updatedSubmission) {
     await admin.from('songs').delete().eq('id', submission.id);
     await admin.storage.from('dlrc-files').remove([publicPath]);
-    throw new Error(updateError.message);
+
+    throw new Error(
+      updateError?.message ??
+        'This submission was already reviewed by another request.'
+    );
   }
 
   await admin.storage.from('submissions').remove([submission.storage_path]);
