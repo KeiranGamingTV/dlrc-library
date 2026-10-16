@@ -2,12 +2,13 @@
   "name": "dlrc-library",
   "version": "0.1.0",
   "private": true,
-  "scripts": {
+    "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "verify": "node scripts/verify.mjs"
+    "verify": "node scripts/verify.mjs",
+    "test:api": "node scripts/api-smoke.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "0.12.7",
