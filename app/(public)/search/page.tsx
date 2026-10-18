@@ -266,68 +266,43 @@ export default async function SearchPage({
               <div className="search-results">
                 {results.songs.map(
                   (song) => (
-                    <Link
-                      className="song-result"
-                      key={song.id}
-                      href={`/search/${song.id}`}
-                    >
+                    <div className="song-result" key={song.id}>
                       <div className="song-result-main">
                         <div className="song-result-title">
-                          {song.title}
+                          <Link href={`/search/${song.id}`}>
+                            {song.title}
+                          </Link>
                         </div>
-
+                    
                         <div className="song-result-artist">
-                          <Link
-                            href={`/artists/${encodeURIComponent(song.artist)}`}
-                            onClick={(e) =>
-                              e.stopPropagation()
-                            }
-                          >
+                          <Link href={`/artists/${encodeURIComponent(song.artist)}`}>
                             {song.artist}
                           </Link>
                         </div>
-
+                    
                         {song.album ? (
                           <div className="song-result-album">
                             <Link
                               href={`/albums/${encodeURIComponent(song.artist)}/${encodeURIComponent(song.album)}`}
-                              onClick={(e) =>
-                                e.stopPropagation()
-                              }
                             >
                               {song.album}
                             </Link>
                           </div>
                         ) : null}
                       </div>
-
+                    
                       <div className="song-result-meta">
-                        {song.duration_ms !==
-                        null ? (
-                          <span>
-                            {formatDuration(
-                              song.duration_ms
-                            )}
-                          </span>
+                        {song.duration_ms !== null ? (
+                          <span>{formatDuration(song.duration_ms)}</span>
                         ) : null}
-
-                        {song.year ? (
-                          <span>
-                            {song.year}
-                          </span>
-                        ) : null}
-
-                        <span>
-                          DLRC{' '}
-                          {song.dlrc_version ||
-                            '1.0'}
-                        </span>
-
-                        <span className="badge">
-                          Verified
-                        </span>
+                    
+                        {song.year ? <span>{song.year}</span> : null}
+                    
+                        <span>DLRC {song.dlrc_version || '1.0'}</span>
+                    
+                        <span className="badge">Verified</span>
                       </div>
-                    </Link>
+                    </div>
                   )
                 )}
               </div>
