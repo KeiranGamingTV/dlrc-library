@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="public/logo.png" alt="DLRC Library logo" width="140" />
+  <img src="app/logo.png" alt="DLRC Library logo" width="140" />
 </p>
 
 <h1 align="center">DLRC Library</h1>
